@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Benchmarking Javascript</title>
+	<script type="text/javascript">
+	
+	
+	function loopFunction(f, count){
+		window.total = 0;
+		document.getElementById("hdnNumber").value = 0;
+		var begin = performance.now();
+		for(var i = 0; i < count; i++){
+			f();
+		}
+		var end =  performance.now() - begin;
+		return end;
+	}
+
+
+	function Loop(f, count, interval, usesDom){
+		return setInterval(function(){
+				var t = loopFunction(f, count);
+
+				var timingFinished = new CustomEvent('timing',{
+					detail:{
+						timing: t,
+						DOMaccess: usesDom
+					}
+				});
+				
+				document.dispatchEvent(timingFinished);	
+
+			}, interval);
+	}
+
+
+	document.addEventListener('timing', function(e){
+		//document.body.insertAdjacentHTML('beforeend',"<p>time taken: " + e.detail.timing + "<br>DOM access: " + e.detail.DOMaccess +  "</p>");
+		document.body.insertAdjacentHTML('beforeend','<pre>'+JSON.stringify(e.detail, null, 2)+"</pre>");
+		if(!e.detail.DOMaccess){
+			if(window.timer1Count++ > 5) window.clearInterval(window.timer1);
+		} else {
+			if(window.timer2Count++ > 5) window.clearInterval(window.timer2);
+		}
+	}, false);
+
+	window.onload = function(){
+
+
+		var f1 = function(){
+			var a = Math.random();
+			window.total += a;			
+		}
+
+		var f2 = function(){
+			var a = Math.random();
+			var hdn = document.getElementById("hdnNumber");
+			hdn.value = parseFloat(hdn.value) + a;
+		}
+
+		window.timer1Count = 0;
+		window.timer1 = Loop(f1, 100000, 500, false);
+
+		window.timer2Count = 0;
+		window.timer2 = Loop(f2, 100000, 500, true);
+	}
+	</script>
+</head>
+<body>
+	<input type="hidden" id="hdnNumber" value="0">
+</body>
+</html>
